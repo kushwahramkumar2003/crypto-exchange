@@ -1,0 +1,12 @@
+# Rust build output
+/target
+
+# Environment secrets — never commit .env (commit .env.example instead)
+.env
+.env.local
+.env.*.local
+
+# OS junk
+.DS_Store
+Thumbs.db
+postgres-language-server.jsonc

@@ -1,0 +1,13 @@
+[package]
+name = "api"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+poem = "3.1.12"
+serde = {version = "1.0.228", features = ["derive"]}
+tokio = { version = "1.45.1", features = ["full"] }
+uuid = { version = "1", features = ["serde","v4"] }
+dotenvy = "0.15.7"
+jsonwebtoken = { version = "10.3.0", default-features = false, features = ["rust_crypto"] }
+db = {path = "../../packages/db"}

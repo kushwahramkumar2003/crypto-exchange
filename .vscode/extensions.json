@@ -1,0 +1,14 @@
+{
+  "recommendations": [
+    // Supabase Postgres Language Server – SQL intellisense, linting & type-checking
+    "Supabase.postgres-language-server-vscode",
+    // Docker support
+    "ms-azuretools.vscode-docker",
+    // YAML support for docker-compose
+    "redhat.vscode-yaml",
+    // .env file highlighting
+    "mikestead.dotenv",
+    // Rust / Cargo (workspace uses Rust)
+    "rust-lang.rust-analyzer"
+  ]
+}
