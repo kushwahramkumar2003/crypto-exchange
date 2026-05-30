@@ -1,15 +1,16 @@
+use std::str::FromStr;
+
 use diesel::prelude::Insertable;
 use diesel::prelude::*;
 use uuid::Uuid;
 use diesel::result::{DatabaseErrorKind, Error as DbError};
 
 use crate::Db::Db;
-use crate::models::user;
 use crate::schema::users;
 
 #[derive(Insertable)]
 #[diesel(table_name=users)]
-struct NewUser<'a> {
+pub struct NewUser<'a> {
     email: &'a str,
     password: &'a str,
     role: &'a str,
@@ -18,10 +19,10 @@ struct NewUser<'a> {
 #[derive(Queryable, Selectable)]
 #[diesel(table_name = users)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-struct User {
-    id: Uuid,
-    email: String,
-    role: String,
+pub struct User {
+    pub id: Uuid,
+    pub email: String,
+    pub role: String,
     password: String,
 }
 
@@ -69,5 +70,21 @@ impl Db{
 
         match_user
 
+    }
+
+    pub fn user_profile(&mut self, uuid_id:String)->QueryResult<Option<User>>{
+        use crate::schema::users::dsl::*;
+        let user_id = Uuid::from_str(&uuid_id).unwrap();
+        let user = users.filter(id.eq(user_id))
+                .select(User::as_select())
+                .first::<User>(&mut self.con)
+                .optional()?;
+        
+        let match_user = match user {
+            Some(user) => Ok(Some(user)),
+            None => Ok(None)
+        };
+
+        match_user
     }
 }

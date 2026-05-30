@@ -1,12 +1,12 @@
-use std::{f64::consts::E, str::FromStr, sync::{Arc, Mutex}};
+use std::{ str::FromStr, sync::{Arc, Mutex}};
 
 use db::{Db::Db, models::user::UserAuthError};
-use poem::{Error, handler, http::{StatusCode, response}, web::{Data, Json, Path}};
+use poem::{Error, IntoResponse, Response, handler, http::{StatusCode, response}, web::{Data, Json}};
 
-use crate::{dto::auth_dto::{request_input::{CreateUserInput, SigninRequest}, request_output::{CreateUserOutput, SigninUserOutput}}, utils::jwt::generate_jwt};
+use crate::{dto::auth_dto::{request_input::{CreateUserInput, SigninRequest}, request_output::{CreateUserOutput, ProfileOutput, SigninUserOutput}}, middlewares::auth_middleware::UserId, utils::jwt::generate_jwt};
 
 #[handler]
-pub fn signup(
+pub fn signup( 
     Json(data):Json<CreateUserInput>,
     Data(db):Data<&Arc<Mutex<Db>>>
 ) -> Result<Json<CreateUserOutput>, Error>  {
@@ -33,7 +33,7 @@ pub fn signup(
 pub fn login(Json(
     data):Json<SigninRequest>,
     Data(db):Data<&Arc<Mutex<Db>>>
-) -> Result<Json<SigninUserOutput>, Error> {
+) -> Result<Response, Error>  {
     let mut locked_db = db.lock().unwrap();
     let res = match locked_db.signin(data.email, data.password) {
         Ok(user_id)=>user_id,
@@ -52,7 +52,31 @@ pub fn login(Json(
         }
     };
     let response = SigninUserOutput{
-        jwt
+        jwt:jwt.clone()
     };
-    Ok(Json(response))
+    let mut http_response = Json(response).into_response();
+    http_response.headers_mut().append(
+        "Set-Cookie",
+        format!("token={}; HttpOnly; Path=/; Max-Age=3600; SameSite=Lax",jwt)
+            .parse()
+            .map_err(|_| Error::from_status(StatusCode::INTERNAL_SERVER_ERROR))?,
+    );
+
+    Ok(http_response)
+}
+
+#[handler]
+pub fn profile_data(
+    user_id:UserId,
+    Data(db):Data<&Arc<Mutex<Db>>>
+)-> Result<Json<ProfileOutput>, Error> {
+    let mut locked_db = db.lock().unwrap();
+    
+    let response = locked_db.user_profile(user_id.user_id).unwrap().unwrap();
+    let profile = ProfileOutput{
+        id:response.id,
+        email:response.email,
+        role:response.role
+    };
+    Ok(Json(profile))
 }
